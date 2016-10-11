@@ -1,12 +1,16 @@
 module Age.Parser
   (
+    days
+  , weeks
+  , months
+  , years
   ) where
 
-import           Age.Dates      (addMonthsNextValid, daysBetween,
-                                 fromGregorianNextValid)
-import           Age.Types      (AgeUnit (..), Day, Range, extract)
-import           Data.Semigroup (Semigroup, (<>))
-import           Data.Time      (addDays)
+import           Age.Dates           (addAgeUnit, daysBetween, monthsBetween,
+                                      weeksBetween, yearsBetween)
+import           Age.Types           (AgeUnit (..), Day, Range)
+import           Control.Monad.State
+import           Data.Semigroup      (Semigroup, (<>))
 
 newtype AgeParser = AgeParser (Range -> ([AgeUnit], Range))
 
@@ -23,35 +27,36 @@ instance Semigroup AgeParser where
                  in (x' ++ x, r'')
 
 days :: AgeParser
-days = AgeParser $ \(s, e) -> (pure $ daysBetween s e, (e, e))
+days = AgeParser $ \(s, e) ->
+  let ds = daysBetween s e
+  in (pure ds, (addAgeUnit ds s, e))
 
 weeks :: AgeParser
 weeks = AgeParser $ \(s, e) ->
-  let ws = div (extract $ daysBetween s e) 7
-      s' = addDays (ws * 7) s
-  in (pure (Weeks ws), (s', e))
+  let ws = weeksBetween s e
+  in (pure ws, (addAgeUnit ws s, e))
 
 months :: AgeParser
 months = AgeParser $ \(s, e) ->
-  let (y1, m1, d1) = toGregorian s
-      (y2, m2, d2) = toGregorian e
-      ms = ((y2 - y1) * 12) + toInteger (m2 - m1)
-      ms' = if d2 < d1 then max 0 (ms - 1) else ms
-      s' = addMonthsNextValid ms' s
-  in (pure $ Months ms', (s', e))
+  let ms = monthsBetween s e
+  in (pure ms, (addAgeUnit ms s, e))
 
-
--- | Returns the number of years between a start 'day' and an end 'day' as well as the
--- ''Range' that is that many years from the start 'day'. This 'day' can be used to calculate
--- the additional days, weeks, or months between the days
 years :: AgeParser
 years = AgeParser $ \(s, e) ->
-  let (y1, m1, d1) = toGregorian s
-      (y2, m2, d2) = toGregorian e
-      ys = y2 - y1
-      ys' = case compare m2 m1 of
-        LT -> max 0 (ys-1)
-        EQ -> if d2 < d1 then max 0 (ys-1) else ys
-        GT -> ys
-      s' = fromGregorianNextValid (y1 + ys') m1 d1
-  in (pure $ Years ys', (s', e))
+  let ys = yearsBetween s e
+  in (pure ys, (addAgeUnit ys s, e))
+
+
+ageParser :: (Day -> Day -> AgeUnit) -> [AgeUnit] -> State Range [AgeUnit]
+ageParser f as = do
+  (s, e) <- get
+  let a = f s e
+  put (addAgeUnit a s, e)
+  return (a : as)
+
+days' :: [AgeUnit] -> State Range [AgeUnit]
+days' = ageParser daysBetween
+
+weeks' = ageParser weeksBetween
+months' = ageParser monthsBetween
+years' = ageParser yearsBetween

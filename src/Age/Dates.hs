@@ -3,18 +3,48 @@ module Age.Dates
     addMonthsNextValid
   , fromGregorianNextValid
   , daysBetween
+  , weeksBetween
+  , monthsBetween
+  , yearsBetween
+  , addAgeUnit
   ) where
 
-import           Age.Types  (AgeUnit (..))
+import           Age.Types  (AgeUnit (..), extract)
 import           Data.Maybe (fromMaybe)
-import           Data.Time  (Day, diffDays, fromGregorian, fromGregorianValid,
-                             toGregorian)
+import           Data.Time  (Day, addDays, diffDays, fromGregorian,
+                             fromGregorianValid, toGregorian)
 
 daysBetween :: Day -> Day -> AgeUnit
 daysBetween s e = Days $ diffDays e s
 
 weeksBetween :: Day -> Day -> AgeUnit
-weeksBetween = undefined
+weeksBetween s e = Weeks $ div (extract $ daysBetween s e) 7
+
+monthsBetween :: Day -> Day -> AgeUnit
+monthsBetween dt dt' = let (y , m , d ) = toGregorian dt
+                           (y', m', d') = toGregorian dt'
+                           ms = ((y' - y) * 12) + toInteger (m' - m)
+                           ms' = if d' < d then max 0 (ms - 1) else ms
+                       in Months ms'
+
+yearsBetween :: Day -> Day -> AgeUnit
+yearsBetween dt dt' = let (y , m , d ) = toGregorian dt
+                          (y', m', d') = toGregorian dt'
+                          ys = y' - y
+                          ys' = case compare m' m of
+                            LT -> max 0 (ys - 1)
+                            GT -> ys
+                            EQ -> if d' < d then max 0 (ys - 1) else ys
+                      in Years ys'
+
+
+addAgeUnit :: AgeUnit -> Day -> Day
+addAgeUnit (Days n) dt = addDays n dt
+addAgeUnit (Weeks n) dt = addDays (n * 7) dt
+addAgeUnit (Months n) dt = addMonthsNextValid n dt
+addAgeUnit (Years n) dt = let (y, m, d) = toGregorian dt
+                          in fromGregorianNextValid (y + n) m d
+
 
 addMonthsNextValid :: Integer -> Day -> Day
 addMonthsNextValid n dt = fromGregorianNextValid (y + ys + ry) (fromInteger m') d

@@ -1,20 +1,7 @@
-{-# LANGUAGE RankNTypes #-}
 module Lib
     (
-      days
-    , weeks
-    , years
-    , months
-    , extract
-    , parseAge
-    , AgeUnit (..)
-    , AgeParser (..)
     ) where
 
-import           Data.Maybe         (fromMaybe)
-import           Data.Semigroup     (Semigroup, (<>))
-import           Data.Time.Calendar (Day, addDays, diffDays, fromGregorian,
-                                     fromGregorianValid, toGregorian)
 
 -- | An age can be represented in different ways.
 -- days is simply the number of days between start date and end date.
