@@ -2,6 +2,7 @@ module Age.Types
   (
     Range
   , AgeUnit (..)
+  , Age
   , extract
   , Day
   ) where
@@ -14,7 +15,9 @@ type Range = (Day, Day)
 data AgeUnit = Days Integer
              | Weeks Integer
              | Months Integer
-             | Years Integer deriving (Eq, Show)
+             | Years Integer deriving (Eq, Show, Ord)
+
+type Age = [AgeUnit]
 
 extract :: AgeUnit -> Integer
 extract (Days   n) = n
