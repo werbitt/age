@@ -1,47 +1,46 @@
 module Age.Parser
-  (
-    ageParser
+  ( AgeParser(..)
+  , AgeParserResult
+  , parseAge
+  , mkAgeParser
   , days
   , weeks
   , months
   , years
-  , evalAgeParser
-  , AgeParser(..)
-  , mkAgeParser
   ) where
 
-import           Age.Dates           (addAgeUnit, daysBetween, monthsBetween,
-                                      weeksBetween, yearsBetween)
-import           Age.Types           (Age, AgeUnit (..), Day, Range)
-import           Control.Monad.Loops (concatM)
-import           Control.Monad.State
+import           Age.Dates      (addAgeUnit, daysBetween, monthsBetween,
+                                 weeksBetween, yearsBetween)
+import           Age.Types      (AgeUnit, Day, Range)
+import           Data.Semigroup
 
-type AgeParser = State Range Age
+newtype AgeParser = AgeParser (Range -> ([AgeUnit], Range))
 
-ageParser :: (Day -> Day -> AgeUnit) -> Age -> AgeParser
-ageParser f as = do
-  (s, e) <- get
-  let a = f s e
-  put (addAgeUnit a s, e)
-  return (a : as)
+type AgeParserResult = ([AgeUnit], Range)
 
-days :: Age -> AgeParser
-days = ageParser daysBetween
+parseAge :: AgeParser -> Range ->  AgeParserResult
+parseAge (AgeParser f) = f
 
-weeks :: Age -> AgeParser
-weeks = ageParser weeksBetween
+instance Semigroup AgeParser where
+  a <> b
+    = AgeParser $ \r ->
+                 let (x, r') = parseAge b r
+                     (x', r'') = parseAge a r'
+                 in (x' ++ x, r'')
 
-months :: Age -> AgeParser
-months = ageParser monthsBetween
+mkAgeParser :: (Day -> Day -> AgeUnit) -> AgeParser
+mkAgeParser f = AgeParser $ \(s, e) ->
+  let n = f s e
+  in (pure n, (addAgeUnit n s, e))
 
-years :: Age -> AgeParser
-years = ageParser yearsBetween
+days :: AgeParser
+days = mkAgeParser daysBetween
 
-evalAgeParsers :: [Age -> AgeParser] -> Range -> Age
-evalAgeParsers = evalState . flip concatM []
+weeks :: AgeParser
+weeks = mkAgeParser weeksBetween
 
-evalAgeParser :: AgeParser -> Range -> Age
-evalAgeParser = evalState
+months :: AgeParser
+months = mkAgeParser monthsBetween
 
-mkAgeParser :: (Age -> AgeParser) -> AgeParser
-mkAgeParser f = f []
+years :: AgeParser
+years = mkAgeParser yearsBetween

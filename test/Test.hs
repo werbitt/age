@@ -1,8 +1,8 @@
-import qualified ParserNoStateTest as PNS
+import qualified ParserTest as P
 import           Test.Tasty
 
 main :: IO ()
 main = defaultMain tests
 
 tests :: TestTree
-tests = testGroup "Tests" [PNS.qcProps]
+tests = testGroup "Tests" [P.qcProps]
