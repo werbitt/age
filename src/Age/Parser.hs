@@ -2,11 +2,12 @@ module Age.Parser
   ( AgeParser(..)
   , parseAge
   , mkAgeParser
-  , age
+  , evalAge
   , days
   , weeks
   , months
   , years
+  , defaultParser
   ) where
 
 import           Age.Dates      (addAgeUnit, daysBetween, monthsBetween,
@@ -20,8 +21,8 @@ newtype AgeParser = AgeParser (Range -> AgeParserResult)
 parseAge :: AgeParser -> Range ->  AgeParserResult
 parseAge (AgeParser f) = f
 
-age :: AgeParserResult -> Age
-age = fst
+evalAge :: AgeParser -> Range -> Age
+evalAge (AgeParser f) = fst . f
 
 instance Semigroup AgeParser where
   a <> b
@@ -46,3 +47,6 @@ months = mkAgeParser monthsBetween
 
 years :: AgeParser
 years = mkAgeParser yearsBetween
+
+defaultParser :: AgeParser
+defaultParser = years <> months <> weeks <> days
