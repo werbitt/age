@@ -38,7 +38,7 @@ semigroupProps = testGroup "<> works"
 
 prop_mappend_for_weeks_and_days :: (Day, Day) -> Property
 prop_mappend_for_weeks_and_days dts
-  = parseAge (days <> weeks) dts ===
+  = parseAge (weeks <> days) dts ===
     parseAge (AgeParser $ \r ->
                             let (w, r') = parseAge weeks r
                                 (d, r'') = parseAge days r'
@@ -46,7 +46,7 @@ prop_mappend_for_weeks_and_days dts
 
 prop_associativity :: (Day, Day) -> Property
 prop_associativity r@(s, e) = e >= s ==>
-  parseAge ((days <> weeks) <> months) r === parseAge (days <> (weeks <> months)) r
+  parseAge ((months <> weeks) <> days) r === parseAge (months <> (weeks <> days)) r
 
 monthProps :: TestTree
 monthProps = testGroup "months"
@@ -75,8 +75,6 @@ prop_zero_months_within_month r@(s, e)
   where
     monthAndYear dt = let (y, m, _) = toGregorian dt
                       in (m, y)
-
-
 
 arbitraryDatesInConsecutiveMonths :: Gen (Day, Day)
 arbitraryDatesInConsecutiveMonths = do

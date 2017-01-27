@@ -27,8 +27,8 @@ evalAge (AgeParser f) = fst . f
 instance Semigroup AgeParser where
   a <> b
     = AgeParser $ \r ->
-                 let (x, r') = parseAge b r
-                     (x', r'') = parseAge a r'
+                 let (x, r') = parseAge a r
+                     (x', r'') = parseAge b r'
                  in (x' ++ x, r'')
 
 mkAgeParser :: (Day -> Day -> AgeUnit) -> AgeParser
