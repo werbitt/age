@@ -1,8 +1,8 @@
 module Age.Parser
   ( AgeParser(..)
-  , AgeParserResult
   , parseAge
   , mkAgeParser
+  , age
   , days
   , weeks
   , months
@@ -11,15 +11,17 @@ module Age.Parser
 
 import           Age.Dates      (addAgeUnit, daysBetween, monthsBetween,
                                  weeksBetween, yearsBetween)
-import           Age.Types      (AgeUnit, Day, Range)
+import           Age.Types      (Age, AgeUnit, Day, Range)
 import           Data.Semigroup
 
-newtype AgeParser = AgeParser (Range -> ([AgeUnit], Range))
-
-type AgeParserResult = ([AgeUnit], Range)
+type AgeParserResult = (Age, Range)
+newtype AgeParser = AgeParser (Range -> AgeParserResult)
 
 parseAge :: AgeParser -> Range ->  AgeParserResult
 parseAge (AgeParser f) = f
+
+age :: AgeParserResult -> Age
+age = fst
 
 instance Semigroup AgeParser where
   a <> b
